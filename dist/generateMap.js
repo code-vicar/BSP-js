@@ -5,23 +5,14 @@
     var Stack = require('./data_structures/stack');
     var Leaf = require('./leaf');
 
-    function isNullOrUndefined(val) {
-        return typeof val === undefined || val === null;
-    }
+    var Graph = require('graphlib').Graph;
 
-    function def(val, _def) {
-        if (isNullOrUndefined(val)) {
-            return _def;
-        }
-        return val;
-    }
-
-    function getRandomInt(min, max) {
-        return Math.floor(Math.random() * (max - min)) + min;
-    }
+    var def = require('svutils/def');
+    var getRandomInt = require('svutils/getRandomInt');
 
     function generateMap(h, w, opts) {
         opts = def(opts, {});
+
         var MAX_LEAF_SIZE = def(opts.MAX_LEAF_SIZE, 150);
         var MIN_LEAF_SIZE = def(opts.MIN_LEAF_SIZE, 25);
         var SKIP_SPLIT_ABOVE_MAX = def(opts.SKIP_SPLIT_ABOVE_MAX, 10);
@@ -29,7 +20,7 @@
 
         var leafs = new Stack();
 
-        // this is full scene map size
+        // start with one solid tile
         var root = new Leaf({
             x: 0,
             y: 0,
@@ -39,8 +30,12 @@
 
         leafs.push(root);
 
+        var graph = new Graph([root]);
+
+        // process each 'leaf' (aka vertex)
         while (leafs.length()) {
             var leaf = leafs.pop();
+
             if (!leaf) {
                 continue;
             }
@@ -57,20 +52,24 @@
                 continue;
             }
 
+            // adding 2 new edges
             if (leaf.split(MIN_LEAF_SIZE)) {
+                graph.insertEdge(leaf, leaf.leftChild);
+                graph.insertEdge(leaf, leaf.rightChild);
+
                 leafs.push(leaf.rightChild);
                 leafs.push(leaf.leftChild);
             }
         }
 
-        return root;
+        return graph;
     }
 
     module.exports = generateMap;
 
 }());
 
-},{"./data_structures/stack":2,"./leaf":6}],2:[function(require,module,exports){
+},{"./data_structures/stack":2,"./leaf":6,"graphlib":7,"svutils/def":14,"svutils/getRandomInt":15}],2:[function(require,module,exports){
 (function () {
     'use strict';
 
@@ -147,14 +146,32 @@
     var Point = require('./point');
     var Size = require('./size');
 
+    var VertexFactory = require('graphlib').VertexFactory;
+
+    var Vertex = VertexFactory.defineVertex();
+
     var Rectangle = function Rectangle(args, isFinal) {
+        // generate an id for this vertex
+        Vertex.call(this, this.genid());
+
         var x = args.x || 0;
         var y = args.y || 0;
         var h = args.h || 0;
         var w = args.w || 0;
 
-        this.pos = new Point(x, y, isFinal);
-        this.size = new Size(h, w, isFinal);
+        Object.defineProperty(this, 'pos', {
+            enumerable: true,
+            configurable: false,
+            writable: true,
+            value: new Point(x, y, isFinal)
+        });
+
+        Object.defineProperty(this, 'size', {
+            enumerable: true,
+            configurable: false,
+            writable: true,
+            value: new Size(h, w, isFinal)
+        });
 
         if (isFinal) {
             Object.defineProperty(this, 'pos', {
@@ -167,22 +184,25 @@
         }
     };
 
-    Object.defineProperty(Rectangle.prototype, 'pos', {
-        enumerable: true,
-        configurable: false,
-        writable: true
-    });
+    Rectangle.prototype = Object.create(Vertex.prototype);
+    Rectangle.prototype.constructor = Rectangle;
 
-    Object.defineProperty(Rectangle.prototype, 'size', {
-        enumerable: true,
+    Rectangle.prototype.genid = function () {
+        Rectangle.prototype.gids = Rectangle.prototype.gids || 0;
+        return Rectangle.prototype.gids++;
+    };
+
+    Object.defineProperty(Rectangle.prototype, 'gid', {
+        enumerable: false,
         configurable: false,
-        writable: true
+        writable: true,
+        value: 0
     });
 
     module.exports = Rectangle;
 }());
 
-},{"./point":3,"./size":5}],5:[function(require,module,exports){
+},{"./point":3,"./size":5,"graphlib":7}],5:[function(require,module,exports){
 (function () {
     'use strict';
 
@@ -228,7 +248,7 @@
         return Math.floor(Math.random() * (max - min)) + min;
     }
 
-    //Inherit from rectangle
+    // Inherit Rectangle
 
     var Rectangle = require('./geometry/rectangle');
 
@@ -238,18 +258,6 @@
 
     Leaf.prototype = Object.create(Rectangle.prototype);
     Leaf.prototype.constructor = Leaf;
-
-    Object.defineProperty(Leaf.prototype, 'leftChild', {
-        enumerable: true,
-        configurable: false,
-        writable: true
-    });
-
-    Object.defineProperty(Leaf.prototype, 'rightChild', {
-        enumerable: true,
-        configurable: false,
-        writable: true
-    });
 
     function splitH(leaf, splitPos) {
         leaf.leftChild = new Leaf({
@@ -318,5 +326,332 @@
     module.exports = Leaf;
 }());
 
-},{"./geometry/rectangle":4}]},{},[1])(1)
+},{"./geometry/rectangle":4}],7:[function(require,module,exports){
+(function () {
+    'use strict';
+
+    var EdgeFactory = require('./lib/edge');
+    var VertexFactory = require('./lib/vertex');
+    var Graph = require('./lib/graph');
+    var BFS = require('./lib/bfs/bfs');
+
+    module.exports = {
+        EdgeFactory: EdgeFactory,
+        VertexFactory: VertexFactory,
+        Graph: Graph,
+        BFS: BFS
+    };
+
+}());
+
+},{"./lib/bfs/bfs":8,"./lib/edge":9,"./lib/graph":10,"./lib/vertex":11}],8:[function(require,module,exports){
+(function () {
+    'use strict';
+
+    var Graph = require('../graph');
+
+    var VertexBase = require('../vertex').VertexBase;
+
+    var BFS = function BFS(graph, start) {
+        if (!(graph instanceof Graph)) {
+            throw new TypeError('first argument must be an instance of Graph');
+        }
+
+        if (!(start instanceof VertexBase)) {
+            throw new TypeError('second argument must be an instance of Vertex');
+        }
+
+    };
+
+    module.exports = BFS;
+}());
+
+},{"../graph":10,"../vertex":11}],9:[function(require,module,exports){
+(function () {
+    'use strict';
+
+    var EdgeFactory = module.exports = {};
+
+    // allow creation of edge classes with extra properties
+    //  e.g. weight, label, etc...
+    EdgeFactory.defineEdge = function (props) {
+        var Edge = function Edge(v, args) {
+            this.v = v;
+
+            if (typeof args === 'object') {
+                var keys = Object.keys(args);
+                var i = 0,
+                    len = keys.length;
+                for (i = 0; i < len; i++) {
+                    this[keys[i]] = args[keys[i]];
+                }
+            }
+        };
+
+        props = props || [];
+        props.forEach(function (prop) {
+            if (typeof prop === 'undefined' || prop === null) {
+                return;
+            }
+
+            if (typeof prop !== 'string' && !(typeof prop === 'object' && typeof prop.name === 'string')) {
+                return;
+            }
+
+            var def = prop;
+            if (typeof def === 'string') {
+                def = {
+                    name: def
+                };
+            }
+
+            if (!def.config) {
+                def.config = {
+                    writable: true
+                };
+            }
+            Object.defineProperty(Edge.prototype, def.name, def.config);
+        });
+
+        Object.defineProperty(Edge.prototype, 'v', {
+            enumerable: true,
+            writable: true
+        });
+
+        return Edge;
+    };
+
+}());
+
+},{}],10:[function(require,module,exports){
+(function () {
+    'use strict';
+
+    var isNullOrUndefined = require('svutils/isNullOrUndefined');
+    var isArray = require('svutils/isArray');
+
+    var Graph = function Graph(nvertices, opts) {
+        var graph = this;
+
+        // unwrap the options
+        var optsEdgeClass = null,
+            optsDirected = false;
+        if (!isNullOrUndefined(opts) && !isNullOrUndefined(opts.EdgeClass)) {
+            optsEdgeClass = opts.EdgeClass;
+        }
+        if (!isNullOrUndefined(opts) && !isNullOrUndefined(opts.directed)) {
+            optsDirected = opts.directed;
+        }
+
+        // property 'directed' is privately read/write
+        // but publicly read only
+        var isGraphDirected = !!optsDirected;
+        Object.defineProperty(graph, 'directed', {
+            enumerable: true,
+            configurable: false,
+            get: function () {
+                return isGraphDirected;
+            }
+        });
+
+        var vertices = {};
+        if (typeof nvertices === 'number') {
+            graph.nvertices = nvertices;
+        } else if (isArray(nvertices)) {
+            graph.nvertices = nvertices.length;
+            nvertices.forEach(function(vertex) {
+                vertices[vertex.id] = vertex;
+            });
+        }
+
+        graph.vertex = function (id) {
+            return vertices[id];
+        };
+
+        graph.adjacencies = {};
+        graph.degrees = {};
+        if (isGraphDirected) {
+            graph.degreesOut = {};
+            graph.degreesIn = {};
+        }
+
+        var privateInsertEdge = function privateInsertEdge(x, y, directed, edgeArgs) {
+            var degX, degY, degXOut, degYIn;
+
+            // update vertex map
+            if (isNullOrUndefined(vertices[x.id])) {
+                graph.nvertices++;
+                vertices[x.id] = x;
+            }
+            if (isNullOrUndefined(vertices[y.id])) {
+                graph.nvertices++;
+                vertices[y.id] = y;
+            }
+
+            // increment counts
+            graph.nedges++;
+
+            if (isGraphDirected) {
+                //inc x total
+                degX = graph.degrees[x.id] || 0;
+                degX++;
+                graph.degrees[x.id] = degX;
+                //inc x out
+                degXOut = graph.degreesOut[x.id] || 0;
+                degXOut++;
+                graph.degreesOut[x.id] = degXOut;
+                // inc y total
+                degY = graph.degrees[y.id] || 0;
+                degY++;
+                graph.degrees[y.id] = degY;
+                // inc y in
+                degYIn = graph.degreesIn[y.id] || 0;
+                degYIn++;
+                graph.degreesIn[y.id] = degYIn;
+            } else {
+                degX = graph.degrees[x.id] || 0;
+                degX++;
+                graph.degrees[x.id] = degX;
+            }
+
+            // fetch the adjacency list
+            var listX = graph.adjacencies[x.id] || [];
+
+            // create the edge and add it to the list
+            if (!optsEdgeClass) {
+                listX.push(y.id);
+            } else {
+                listX.push(new optsEdgeClass(y.id, edgeArgs));
+            }
+
+            graph.adjacencies[x.id] = listX;
+
+            // if this is an undirected edge, then add the opposite edge
+            if (!directed) {
+                privateInsertEdge(y, x, true, edgeArgs);
+            }
+        };
+
+        graph.insertEdge = function insertEdge(x, y, edgeArgs) {
+            privateInsertEdge(x, y, isGraphDirected, edgeArgs);
+        };
+    };
+
+    Object.defineProperty(Graph.prototype, 'nvertices', {
+        enumerable: true,
+        configurable: false,
+        writable: true,
+        value: 0
+    });
+
+    Object.defineProperty(Graph.prototype, 'nedges', {
+        enumerable: true,
+        configurable: false,
+        writable: true,
+        value: 0
+    });
+
+    Object.defineProperty(Graph.prototype, 'degrees', {
+        enumerable: true,
+        configurable: false,
+        writable: true,
+        value: {}
+    });
+
+    module.exports = Graph;
+
+}());
+
+},{"svutils/isArray":12,"svutils/isNullOrUndefined":13}],11:[function(require,module,exports){
+(function () {
+    'use strict';
+
+    var VertexFactory = module.exports = {};
+
+    VertexFactory.VertexBase = function VertexBase() {};
+
+    VertexFactory.defineVertex = function (props) {
+        var Vertex = function Vertex(id) {
+            VertexFactory.VertexBase.call(this);
+            Object.defineProperty(this, 'id', {
+                enumerable: true,
+                writable: false,
+                value: id
+            });
+        };
+
+        Vertex.prototype = Object.create(VertexFactory.VertexBase.prototype);
+        Vertex.prototype.constructor = Vertex;
+
+        props = props || [];
+
+        props.forEach(function (prop) {
+            // is prop null?
+            if (typeof prop === 'undefined' || prop === null) {
+                return;
+            }
+
+            // is prop either a string, or an object?
+            if (typeof prop !== 'string' || !(typeof prop === 'object' && prop.name)) {
+                return;
+            }
+
+            var def = prop;
+            // if prop was a string, make it an object
+            if (typeof def === 'string') {
+                def = {
+                    name: def
+                };
+            }
+
+            if (!def.config) {
+                def.config = {
+                    writable: true
+                };
+            }
+
+            Object.defineProperty(Vertex.prototype, def.name, def.config);
+        });
+
+        return Vertex;
+    };
+
+}());
+
+},{}],12:[function(require,module,exports){
+module.exports = function (arg) {
+    'use strict';
+
+    return Object.prototype.toString.call(arg) === '[object Array]';
+};
+
+},{}],13:[function(require,module,exports){
+module.exports = function isNullOrUndefined(val) {
+    'use strict';
+
+    return (typeof val === 'undefined' || val === null);
+};
+
+},{}],14:[function(require,module,exports){
+var isNullOrUndefined = require('../isNullOrUndefined');
+
+module.exports = function def(val, _def) {
+    'use strict';
+
+    if (isNullOrUndefined(val)) {
+        return _def;
+    }
+    return val;
+};
+
+},{"../isNullOrUndefined":16}],15:[function(require,module,exports){
+module.exports = function getRandomInt(min, max) {
+    'use strict';
+
+    return Math.floor(Math.random() * (max - min)) + min;
+};
+
+},{}],16:[function(require,module,exports){
+arguments[4][13][0].apply(exports,arguments)
+},{"dup":13}]},{},[1])(1)
 });

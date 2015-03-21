@@ -4,23 +4,14 @@
     var Stack = require('./data_structures/stack');
     var Leaf = require('./leaf');
 
-    function isNullOrUndefined(val) {
-        return typeof val === undefined || val === null;
-    }
+    var Graph = require('graphlib').Graph;
 
-    function def(val, _def) {
-        if (isNullOrUndefined(val)) {
-            return _def;
-        }
-        return val;
-    }
-
-    function getRandomInt(min, max) {
-        return Math.floor(Math.random() * (max - min)) + min;
-    }
+    var def = require('svutils/def');
+    var getRandomInt = require('svutils/getRandomInt');
 
     function generateMap(h, w, opts) {
         opts = def(opts, {});
+
         var MAX_LEAF_SIZE = def(opts.MAX_LEAF_SIZE, 150);
         var MIN_LEAF_SIZE = def(opts.MIN_LEAF_SIZE, 25);
         var SKIP_SPLIT_ABOVE_MAX = def(opts.SKIP_SPLIT_ABOVE_MAX, 10);
@@ -28,7 +19,7 @@
 
         var leafs = new Stack();
 
-        // this is full scene map size
+        // start with one solid tile
         var root = new Leaf({
             x: 0,
             y: 0,
@@ -38,8 +29,12 @@
 
         leafs.push(root);
 
+        var graph = new Graph([root]);
+
+        // process each 'leaf' (aka vertex)
         while (leafs.length()) {
             var leaf = leafs.pop();
+
             if (!leaf) {
                 continue;
             }
@@ -56,13 +51,17 @@
                 continue;
             }
 
+            // adding 2 new edges
             if (leaf.split(MIN_LEAF_SIZE)) {
+                graph.insertEdge(leaf, leaf.leftChild);
+                graph.insertEdge(leaf, leaf.rightChild);
+
                 leafs.push(leaf.rightChild);
                 leafs.push(leaf.leftChild);
             }
         }
 
-        return root;
+        return graph;
     }
 
     module.exports = generateMap;

@@ -9,7 +9,7 @@
         return Math.floor(Math.random() * (max - min)) + min;
     }
 
-    //Inherit from rectangle
+    // Inherit Rectangle
 
     var Rectangle = require('./geometry/rectangle');
 
@@ -19,18 +19,6 @@
 
     Leaf.prototype = Object.create(Rectangle.prototype);
     Leaf.prototype.constructor = Leaf;
-
-    Object.defineProperty(Leaf.prototype, 'leftChild', {
-        enumerable: true,
-        configurable: false,
-        writable: true
-    });
-
-    Object.defineProperty(Leaf.prototype, 'rightChild', {
-        enumerable: true,
-        configurable: false,
-        writable: true
-    });
 
     function splitH(leaf, splitPos) {
         leaf.leftChild = new Leaf({

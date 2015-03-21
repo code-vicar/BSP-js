@@ -9,6 +9,10 @@
   },
   "author": "Scott Vickers",
   "license": "Apache-2.0",
+  "dependencies": {
+    "graphlib": "git+https://github.com/code-vicar/graphlib.git",
+    "svutils": "git+https://github.com/code-vicar/svutils.git"
+  },
   "devDependencies": {
     "browserify": "^9.0.3",
     "grunt": "^0.4.5"
