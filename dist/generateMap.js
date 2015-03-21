@@ -461,6 +461,7 @@
             graph.nvertices = nvertices.length;
             nvertices.forEach(function(vertex) {
                 vertices[vertex.id] = vertex;
+                degrees[vertex.id] = 0;
             });
         }
 
