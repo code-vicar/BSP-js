@@ -1,13 +1,8 @@
 (function () {
     'use strict';
 
-    function isNullOrUndefined(val) {
-        return typeof val === 'undefined' || val === null;
-    }
-
-    function getRandomInt(min, max) {
-        return Math.floor(Math.random() * (max - min)) + min;
-    }
+    var isNullOrUndefined = require('svutils/isNullOrUndefined');
+    var getRandomInt = require('svutils/getRandomInt');
 
     // Inherit Rectangle
 
