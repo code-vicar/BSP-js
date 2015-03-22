@@ -240,13 +240,8 @@
 (function () {
     'use strict';
 
-    function isNullOrUndefined(val) {
-        return typeof val === 'undefined' || val === null;
-    }
-
-    function getRandomInt(min, max) {
-        return Math.floor(Math.random() * (max - min)) + min;
-    }
+    var isNullOrUndefined = require('svutils/isNullOrUndefined');
+    var getRandomInt = require('svutils/getRandomInt');
 
     // Inherit Rectangle
 
@@ -326,7 +321,7 @@
     module.exports = Leaf;
 }());
 
-},{"./geometry/rectangle":4}],7:[function(require,module,exports){
+},{"./geometry/rectangle":4,"svutils/getRandomInt":15,"svutils/isNullOrUndefined":16}],7:[function(require,module,exports){
 (function () {
     'use strict';
 
