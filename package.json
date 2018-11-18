@@ -3,12 +3,18 @@
   "version": "1.0.3",
   "description": "Binary space partitioned graph generator",
   "main": "lib/index.js",
-  "private": true,
+  "engines": {
+    "node": ">=8"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "npm run compile && npm run bundle",
     "compile": "rm -rf lib && babel src -d lib",
     "bundle": "rm -rf bundle && webpack --mode=production lib/index.js -o ./bundle/bsp-js.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/code-vicar/bsp.git"
   },
   "author": "Scott Vickers",
   "license": "Apache-2.0",
