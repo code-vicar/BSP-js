@@ -49,10 +49,12 @@ export function generateMap(h, w, {
 
     while (nodesToSplit.length > 0) {
         const node = nodesToSplit.pop()
+        debug('processing node %s', node['@@vertexId'])
+
         // chance that a node won't split at all
         const ignoreSplit = getRandomIntInclusive(0, 100) < ignoreSplitPercent
         if (ignoreSplit) {
-            debug('skip split')
+            debug('split skipped')
             continue
         }
 
@@ -68,13 +70,18 @@ export function generateMap(h, w, {
             // check if the side is within the stopping length
             const isStop = node.size[side] <= settings[side].stop
             const ignoreStop = getRandomIntInclusive(0, 100) < ignoreStopPercent
-            if (isStop && !ignoreStop) {
-                return true
+            if (isStop) {
+                if (!ignoreStop) {
+                    debug('stopping split for side, %s %s', side, node.size[side])
+                    return false
+                }
+                debug('stop skipped for side, %s: %s', side, node.size[side])
             }
 
             const halves = splitRectangleRandom(node, settings[side].min, side)
             if (!halves) {
                 // couldn't split on this side
+                debug('unable to split for side, %s: %s', side, node.size[side])
                 return false
             }
 
