@@ -7,7 +7,7 @@ import { getRandomIntInclusive } from './service/get_random_int_inclusive'
 import { splitRectangleRandom } from './service/split_rectangle_random'
 import { Counter } from './service/counter'
 
-const debug = debugFactory('bsp-js:generate_map')
+const debug = debugFactory('bsp:generate_map')
 
 export function generateMap(h, w, {
     minHeight = 25,

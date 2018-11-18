@@ -1,7 +1,7 @@
 {
-  "name": "bsp-js",
-  "version": "1.0.1",
-  "description": "",
+  "name": "@code-vicar/bsp",
+  "version": "1.0.2",
+  "description": "Binary space partitioned graph generator",
   "main": "index.js",
   "private": true,
   "scripts": {
@@ -14,7 +14,6 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@code-vicar/graphlib": "^1.2.0",
-    "@code-vicar/svutils": "^2.2.2",
     "debug": "^4.1.0",
     "lodash.shuffle": "^4.2.0"
   },
